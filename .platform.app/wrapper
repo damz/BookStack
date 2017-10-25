@@ -1,25 +1,42 @@
-#!/usr/bin/env php
-<?php
+#!/usr/bin/python
+import os
+import subprocess
+import re
+import shlex
+import sys
 
-if (count($argv) >= 2) {
-  $args = [
-    "-c",
-    implode(
-      " ",
-      array_map(
-        "escapeshellarg",
-        array_slice($argv, 1)
-      )
-    ),
-  ];
-} else {
-  $args = [];
-}
+key_re = re.compile("^[a-zA-Z_][a-zA-Z0-9_]+$")
 
-$h = popen("./.platform.app/env", "r");
-$env = json_decode(stream_get_contents($h), TRUE);
-pclose($h);
+try:
+    env = subprocess.check_output([".platform.app/env"])
+except subprocess.CalledProcessError:
+    env = ""
 
-if (!pcntl_exec("/bin/bash", $args, $env)) {
-  exit(1);
-}
+environ = os.environ.copy()
+for line in env.split("\n"):
+    line = line.strip()
+    if line.startswith("#"):
+        continue
+
+    try:
+        key, value = line.split("=", 1)
+    except ValueError:
+        continue
+
+    value = " ".join(shlex.split(value))
+
+    if not key_re.match(key):
+        continue
+
+    if value != "":
+        environ[key] = value
+    else:
+        environ.pop(key, None)
+
+args = subprocess.list2cmdline(sys.argv[1:])
+
+os.execve(
+    "/bin/bash",
+    ["/bin/bash", "-c", args,],
+    environ,
+)
