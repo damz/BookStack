@@ -1,0 +1,40 @@
+#!/usr/bin/env php
+<?php
+ini_set("display_errors", "stderr");
+
+$prefix = "PLATFORM_";
+if (!isset($_ENV["${prefix}RELATIONSHIPS"])) {
+  print json_encode($_ENV);
+  return;
+}
+
+$_ENV["APP_ENV"] = "production";
+$_ENV["APP_DEBUG"] = "false";
+$_ENV["APP_KEY"] = substr($_ENV["${prefix}PROJECT_ENTROPY"], 0, 32);
+
+$routes = json_decode(base64_decode($_ENV["${prefix}ROUTES"]), TRUE);
+foreach ($routes as $url => $route_info) {
+  if ($route_info["original_url"] == "https://{default}/") {
+    $_ENV["APP_URL"] = rtrim($url, "/");
+    break;
+  }
+}
+
+$relationships = json_decode(base64_decode($_ENV["${prefix}RELATIONSHIPS"]), TRUE);
+
+$database = $relationships["db"][0];
+$_ENV["DB_HOST"] = $database["host"];
+$_ENV["DB_DATABASE"] = $database["path"];
+$_ENV["DB_USERNAME"] = $database["username"];
+$_ENV["DB_PASSWORD"] = $database["password"];
+
+$_ENV["CACHE_DRIVER"] = "database";
+$_ENV["SESSION_DRIVER"] = "database";
+$_ENV["QUEUE_DRIVER"] = "sync";
+
+$_ENV["STORAGE_TYPE"] = "local";
+
+$_ENV["MAIL_DRIVER"] = "smtp";
+$_ENV["MAIL_HOST"] = $_ENV["${prefix}SMTP_HOST"];
+
+print json_encode($_ENV);

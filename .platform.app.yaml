@@ -1,0 +1,28 @@
+name: app
+type: php:7.1
+disk: 4096
+
+runtime:
+    extensions:
+        - tidy
+
+web:
+    commands:
+        start:
+            ./.platform.app/wrapper /usr/sbin/php-fpm7.1-zts
+    locations:
+        /:
+            root: public
+            passthru: /index.php
+            allow: true
+            expires: 1y
+
+relationships:
+    db: db:mysql
+
+mounts:
+    "storage/framework": "shared:files/framework"
+    "storage/logs": "shared:files/logs"
+    "storage/uploads/files": "shared:files/uploads"
+    "public/uploads": "shared:files/public-uploads"
+    "bootstrap/cache": "shared:files/bootstrap-cache"

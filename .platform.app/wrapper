@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+
+if (count($argv) >= 2) {
+  $args = [
+    "-c",
+    implode(
+      " ",
+      array_map(
+        "escapeshellarg",
+        array_slice($argv, 1)
+      )
+    ),
+  ];
+} else {
+  $args = [];
+}
+
+$h = popen("./.platform.app/env", "r");
+$env = json_decode(stream_get_contents($h), TRUE);
+pclose($h);
+
+if (!pcntl_exec("/bin/bash", $args, $env)) {
+  exit(1);
+}
